@@ -1,0 +1,63 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+USE_PROCD=1
+
+NFT_FILE="/etc/nftables.d/10-portscan.nft"
+
+start_service() {
+	local enable
+	local timeout
+	local rate
+	local burst
+
+	config_load portscan
+	config_get_bool enable settings enable 0
+	config_get timeout settings timeout "12h"
+	config_get rate settings limit_rate "15"
+	config_get burst settings limit_burst "10"
+
+	if [ "$enable" -eq 1 ]; then
+		mkdir -p /etc/nftables.d
+		cat <<EOF > "$NFT_FILE"
+set portscan_blacklist {
+    type ipv4_addr
+    flags timeout
+    timeout $timeout
+    size 65535
+}
+
+set portscan_rate {
+    type ipv4_addr
+    flags dynamic
+    timeout 1m
+    size 65535
+}
+
+chain detect_portscan {
+    ip saddr @portscan_blacklist \\
+        counter drop
+
+    ct state new tcp flags syn \\
+        update @portscan_rate { ip saddr limit rate over $rate/minute burst $burst packets } \\
+        add @portscan_blacklist { ip saddr timeout $timeout } \\
+        log prefix "[PORTSCAN] " level warn \\
+        counter drop
+}
+EOF
+	else
+		rm -f "$NFT_FILE"
+	fi
+
+	# Reload firewall to apply new nftables configuration
+	fw4 reload
+}
+
+stop_service() {
+	rm -f "$NFT_FILE"
+	fw4 reload
+}
+
+service_triggers() {
+	procd_add_reload_trigger "portscan"
+}

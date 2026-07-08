@@ -1,0 +1,5 @@
+config portscan 'settings'
+	option enable '1'
+	option timeout '12h'
+	option limit_rate '15'
+	option limit_burst '10'

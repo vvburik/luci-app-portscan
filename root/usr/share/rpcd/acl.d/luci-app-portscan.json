@@ -1,0 +1,18 @@
+{
+	"luci-app-portscan": {
+		"description": "Portscan protection",
+		"read": {
+			"uci": [ "portscan" ],
+			"ubus": {
+				"luci": [ "getVersion" ],
+				"file": [ "exec" ]
+			}
+		},
+		"write": {
+			"uci": [ "portscan" ],
+			"file": {
+				"/usr/sbin/nft": [ "exec" ]
+			}
+		}
+	}
+}
