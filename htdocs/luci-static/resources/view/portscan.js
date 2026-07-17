@@ -88,7 +88,7 @@ return view.extend({
 
 				var entries = [];
 				if (stdout) {
-					var regex = /([a-fA-F0-9\.\:]+)\s+expires\s+([0-9a-z]+)/g;
+					var regex = /([a-fA-F0-9\.\:]+)\s+(?:timeout\s+[0-9a-z]+\s+)?expires\s+([0-9a-z]+)/g;
 					var match;
 					while ((match = regex.exec(stdout)) !== null) {
 						entries.push({ ip: match[1], expires: formatExpires(match[2]) });
