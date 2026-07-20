@@ -11,7 +11,8 @@
 		"write": {
 			"uci": [ "portscan" ],
 			"file": {
-				"/usr/sbin/nft": [ "exec" ]
+				"/usr/sbin/nft": [ "exec" ],
+				"/etc/init.d/portscan": [ "exec" ]
 			}
 		}
 	}

@@ -81,3 +81,7 @@ After making manual changes to the UCI file, simply restart the service to apply
 ## How it works
 
 When enabled, the application's `init.d` script generates an `nftables` file (`/etc/nftables.d/10-portscan.nft`) based on your UCI settings. This file defines a dynamic set (`portscan_rate`) to monitor incoming SYN connections and a blacklist set (`portscan_blacklist`) that drops traffic from offending IP addresses. The firewall (`fw4`) automatically includes these rules upon reload.
+
+> [!NOTE]
+> **Memory vs Storage (Cache Mechanics)**
+> Automatic bans are stored exclusively in RAM and flushed to disk (`/etc/portscan.cache`) only on a graceful service stop or reboot. Manual changes made via the LuCI UI (like adding a permanent block) are saved to disk instantly.

@@ -4,6 +4,7 @@ START=99
 USE_PROCD=1
 
 NFT_FILE="/etc/nftables.d/10-portscan.nft"
+CACHE_FILE="/etc/portscan.cache"
 
 start_service() {
 	local enable
@@ -20,6 +21,11 @@ start_service() {
 	if [ "$enable" -eq 1 ]; then
 		mkdir -p /etc/nftables.d
 		cat <<EOF > "$NFT_FILE"
+set portscan_permanent {
+    type ipv4_addr
+    size 65535
+}
+
 set portscan_blacklist {
     type ipv4_addr
     flags timeout
@@ -35,6 +41,9 @@ set portscan_rate {
 }
 
 chain detect_portscan {
+    ip saddr @portscan_permanent \\
+        counter drop
+
     ip saddr @portscan_blacklist \\
         counter drop
 
@@ -51,9 +60,26 @@ EOF
 
 	# Reload firewall to apply new nftables configuration
 	fw4 reload
+
+	# Restore from cache if enabled
+	if [ "$enable" -eq 1 ] && [ -s "$CACHE_FILE" ]; then
+		nft -f "$CACHE_FILE" 2>/dev/null
+	fi
+}
+
+EXTRA_COMMANDS="save_cache"
+
+save_cache() {
+	if nft list set inet fw4 portscan_blacklist >/dev/null 2>&1; then
+		nft list set inet fw4 portscan_permanent > "$CACHE_FILE" 2>/dev/null
+		nft list set inet fw4 portscan_blacklist >> "$CACHE_FILE" 2>/dev/null
+	fi
 }
 
 stop_service() {
+	# Save current sets to cache if fw4 is running and sets exist
+	save_cache
+
 	rm -f "$NFT_FILE"
 	fw4 reload
 }
